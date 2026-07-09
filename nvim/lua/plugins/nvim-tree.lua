@@ -46,5 +46,6 @@ return {
     end,
     keys = {
         { "<leader>e", "<cmd>NvimTreeToggle<CR>", desc = "[E]xplorer" },
+        { "<leader>o", "<cmd>NvimTreeFindFile<CR>", desc = "Reveal current file" },
     },
 }

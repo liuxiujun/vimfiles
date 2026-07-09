@@ -40,6 +40,7 @@ local config = {}
 
 -- 基础外观
 config.color_scheme = "Dracula"                 -- 可选：'GruvboxDark', 'Tokyo Night' 等
+
 if is_windows then
     config.font = wezterm.font("Cascadia Code") -- 或 'Fira Code', 'JetBrains Mono'
 else
@@ -89,7 +90,16 @@ if is_windows then
             },
         },
         {
-            label = "tiankun(test)",
+            label = "dev@debian-lxj-test",
+            args = {
+                "ssh",
+                "-i",
+                wezterm.home_dir .. "/.ssh/id_ed25519",
+                "dev@172.31.0.150",
+            },
+        },
+        {
+            label = "lxj@debian-lxj-test",
             args = {
                 "ssh",
                 "-i",

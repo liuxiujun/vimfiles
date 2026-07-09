@@ -1,4 +1,5 @@
 -- return { "ellisonleao/gruvbox.nvim" }
+-- return { "catppuccin/nvim", name = "catppuccin", priority = 1000 }
 return {
     "tanvirtin/monokai.nvim",
     config = function()
