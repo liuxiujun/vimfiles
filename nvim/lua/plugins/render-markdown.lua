@@ -1,5 +1,6 @@
 return {
 	"MeanderingProgrammer/render-markdown.nvim",
+	ft = "markdown",
 	opts = {
 		completions = {
 			blink = { enabled = true }, -- 开启 blink 补全源

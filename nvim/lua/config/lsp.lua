@@ -1,13 +1,22 @@
 -- 跨平台添加 Mason bin 到 PATH
-local capabilities = require("blink.cmp").get_lsp_capabilities()
 local mason_bin = vim.fs.joinpath(vim.fn.stdpath("data"), "mason", "bin")
 local separator = vim.fn.has("win32") == 1 and ";" or ":"
 vim.env.PATH = mason_bin .. separator .. vim.env.PATH
+
+-- blink.cmp 的补全能力声明；blink 未加载时退回默认能力，避免对它产生硬依赖
+local capabilities = (function()
+    local ok, blink = pcall(require, "blink.cmp")
+    if ok then
+        return blink.get_lsp_capabilities()
+    end
+    return vim.lsp.protocol.make_client_capabilities()
+end)()
 
 vim.lsp.config("bashls", {
     cmd = { "bash-language-server", "start" }, -- 启动命令
     filetypes = { "sh", "bash" },              -- 作用于哪些文件类型
     root_markers = { ".git", "package.json" }, -- 根目录标记（可选）
+    capabilities = capabilities,
     settings = {},                             -- 服务器特定设置
 })
 
@@ -53,16 +62,24 @@ vim.lsp.config("basedpyright", {
     filetypes = { "python" },
     root_markers = { ".git", ".venv", "pyproject.toml", "pyrightconfig.json" },
     capabilities = capabilities,
+    -- 每次 LSP 启动时动态解析解释器：项目 .venv/venv > $VIRTUAL_ENV > 系统 python
+    -- （放在 before_init 而不是这里求值，多项目/晚激活的 venv 也能生效）
+    before_init = function(_, config)
+        local suffix = vim.fn.has("win32") == 1 and "\\Scripts\\python.exe" or "/bin/python"
+        local venv = vim.fs.find({ ".venv", "venv" }, { upward = true, path = config.root_dir or vim.uv.cwd() })[1]
+        if venv then
+            config.settings.python.pythonPath = vim.fs.joinpath(venv, suffix)
+            return
+        end
+        local env = os.getenv("VIRTUAL_ENV")
+        if env and env ~= "" then
+            config.settings.python.pythonPath = env .. suffix
+            return
+        end
+        config.settings.python.pythonPath = vim.fn.exepath("python3") ~= "" and vim.fn.exepath("python3") or "python"
+    end,
     settings = {
         python = {
-            pythonPath = (function()
-                local venv_path = os.getenv("VIRTUAL_ENV")
-                if venv_path and venv_path ~= "" then
-                    return venv_path .. (vim.fn.has("win32") == 1 and "\\Scripts\\python.exe" or "/bin/python")
-                else
-                    return vim.fn.exepath("python3") or "python3" -- 系统 Python
-                end
-            end)(),
             analysis = {
                 -- 类型检查模式，可选 "off", "basic", "strict"
                 typeCheckingMode = "basic",
@@ -96,16 +113,10 @@ vim.lsp.config("ruff", {
     root_markers = { ".git", "", "pyproject.toml", "pyrightconfig.json", "ruff.toml", ".ruff.toml" },
     capabilities = capabilities,
     -- 可选：覆盖某些能力，避免与 pyright 重复
-    on_attach = function(client, bufnr)
-        -- 禁用 hover 能力，让 pyright 提供更好的类型信息
+    on_attach = function(client)
+        -- 禁用 hover 能力，让 basedpyright 提供更好的类型信息
+        -- （格式化统一走 conform 的 <leader>cf，不在这里挂保存时自动格式化）
         client.server_capabilities.hoverProvider = false
-        -- 可选：保存时自动格式化
-        vim.api.nvim_create_autocmd("BufWritePre", {
-            buffer = bufnr,
-            callback = function()
-                vim.lsp.buf.format({ bufnr = bufnr, async = false })
-            end,
-        })
     end,
     init_options = {
         settings = {
@@ -163,6 +174,9 @@ vim.lsp.config("clangd", {
 vim.lsp.config("gopls", {
     cmd = { "gopls" },
     capabilities = capabilities,
+    -- 必须限定 filetypes：vim.lsp.enable 下不写 filetypes 会附着到所有 buffer
+    filetypes = { "go", "gomod", "gowork", "gotmpl" },
+    root_markers = { "go.mod", ".git" },
     settings = {
         gopls = {
             analyses = {
@@ -205,6 +219,15 @@ vim.lsp.config("intelephense", {
     cmd = { "intelephense", "--stdio" },
     filetypes = { "php" },
     root_markers = { '.git', 'composer.json', '.phpactor.json', '.phpactor.yml' },
+})
+
+-- Racket LSP（需先 raco pkg install racket-langserver）
+-- 提供补全、跳转定义/引用、语法检查；REPL 求值由 conjure 负责（plugins/conjure.lua）
+vim.lsp.config("racket_langserver", {
+    cmd = { "racket", "-lib", "racket-langserver" },
+    filetypes = { "racket" },
+    root_markers = { "info.rkt", ".git" },
+    capabilities = capabilities,
 })
 
 -- 1. 获取 JDTLS 安装路径
@@ -271,6 +294,8 @@ else
     vim.lsp.enable("jdtls")
 end
 
+-- jdtls 只在上面的 launcher jar 找到时启用，不放在下面的列表里，
+-- 避免找不到 jar 时启用一个没有 cmd 的空配置
 vim.lsp.enable({
     "lua_ls",
     "basedpyright",
@@ -279,6 +304,7 @@ vim.lsp.enable({
     "bashls",
     "ts_ls",
     "clangd",
-    "jdtls",
+    "gopls",
     "intelephense",
+    "racket_langserver",
 })

@@ -50,6 +50,10 @@ vim.api.nvim_create_autocmd("InsertLeave", {
 -----------------------------------------------------------------
 --- LspAttach 回调：所有 LSP 功能快捷键在这里设置
 -----------------------------------------------------------------
+-- 高亮相关的 augroup 只创建一次；光标停留时高亮符号，移动时清除
+local highlight_augroup = vim.api.nvim_create_augroup("LspDocumentHighlight", { clear = true })
+local clear_highlight_augroup = vim.api.nvim_create_augroup("LspClearHighlight", { clear = true })
+
 vim.api.nvim_create_autocmd("LspAttach", {
     group = vim.api.nvim_create_augroup("UserLspConfig", {}),
     callback = function(ev)
@@ -71,7 +75,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
         vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, vim.tbl_extend("keep", opts, { desc = "Rename symbol" }))
         vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, vim.tbl_extend("keep", opts, { desc = "Code action" }))
         vim.keymap.set("v", "<leader>ca", vim.lsp.buf.code_action, vim.tbl_extend("keep", opts, { desc = "Code action (visual)" }))
-        vim.keymap.set("n", "<leader>cf", function() vim.lsp.buf.format { async = true } end, vim.tbl_extend("keep", opts, { desc = "Format buffer" }))
+        -- 格式化统一走 conform 的 <leader>cf（LSP 作为 fallback），见 plugins/conform.lua
 
         -- 其他实用功能
         vim.keymap.set("n", "<leader>wa", vim.lsp.buf.add_workspace_folder, vim.tbl_extend("keep", opts, { desc = "Add workspace folder" }))
@@ -85,16 +89,16 @@ vim.api.nvim_create_autocmd("LspAttach", {
         end
 
         -- 动态获取缓冲区所在服务器的能力，可以设置更精细的快捷键（可选）
-        if client and  client.server_capabilities.documentHighlightProvider then
+        if client and client.server_capabilities.documentHighlightProvider then
             vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
                 buffer = ev.buf,
                 callback = vim.lsp.buf.document_highlight,
-                group = vim.api.nvim_create_augroup("LspDocumentHighlight", {}),
+                group = highlight_augroup,
             })
             vim.api.nvim_create_autocmd("CursorMoved", {
                 buffer = ev.buf,
                 callback = vim.lsp.buf.clear_references,
-                group = vim.api.nvim_create_augroup("LspClearHighlight", {}),
+                group = clear_highlight_augroup,
             })
         end
     end,

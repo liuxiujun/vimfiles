@@ -37,12 +37,19 @@ return {
             css = { "prettier" },
             scss = { "prettier" },
             json = { "prettier" },
+            racket = { "raco_fmt" },
         },
         -- The options you set here will be merged with the builtin formatters.
         -- You can also define any custom formatters here.
         --@type table<string, conform.FormatterConfigOverride|fun(bufnr: integer): nil|conform.FormatterConfigOverride>
         formatters = {
             injected = { options = { ignore_errors = true } },
+            -- Racket 格式化器（需先 raco pkg install fmt），从 stdin 读取并输出格式化结果
+            raco_fmt = {
+                command = "raco",
+                args = { "fmt" },
+                stdin = true,
+            },
             -- # Example of using dprint only when a dprint.json file is present
             -- dprint = {
             --   condition = function(ctx)

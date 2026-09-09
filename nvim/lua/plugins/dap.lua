@@ -1,21 +1,83 @@
+local function join_paths(...)
+	local separator = package.config:sub(1, 1)
+	return table.concat({ ... }, separator)
+end
+
+local function mason_package_path(package_name)
+	local ok, registry = pcall(require, "mason-registry")
+	if not ok or not registry.has_package(package_name) then
+		return nil
+	end
+
+	local package = registry.get_package(package_name)
+	if not package:is_installed() then
+		return nil
+	end
+
+	return package:get_install_path()
+end
+
+local function debugpy_python()
+	local debugpy = mason_package_path("debugpy")
+	if not debugpy then
+		return vim.fn.exepath("python3") ~= "" and "python3" or "python"
+	end
+
+	if vim.fn.has("win32") == 1 then
+		return join_paths(debugpy, "venv", "Scripts", "python.exe")
+	end
+
+	return join_paths(debugpy, "venv", "bin", "python")
+end
+
 return {
-	-- 1. nvim-dap：调试核心，配置 Java 适配器
+	{
+		"jay-babu/mason-nvim-dap.nvim",
+		dependencies = { "mason-org/mason.nvim", "mfussenegger/nvim-dap" },
+		opts = {
+			automatic_installation = true,
+			handlers = {},
+		},
+	},
+
 	{
 		"mfussenegger/nvim-dap",
 		event = "VeryLazy",
+		dependencies = { "mason-org/mason.nvim" },
+		keys = {
+			{ "<F5>", function() require("dap").continue() end, desc = "Debug: start/continue" },
+			{ "<F10>", function() require("dap").step_over() end, desc = "Debug: step over" },
+			{ "<F11>", function() require("dap").step_into() end, desc = "Debug: step into" },
+			{ "<F12>", function() require("dap").step_out() end, desc = "Debug: step out" },
+			{ "<leader>db", function() require("dap").toggle_breakpoint() end, desc = "Debug: toggle breakpoint" },
+			{
+				"<leader>dB",
+				function()
+					require("dap").set_breakpoint(vim.fn.input("Breakpoint condition: "))
+				end,
+				desc = "Debug: conditional breakpoint",
+			},
+			{ "<leader>dc", function() require("dap").run_to_cursor() end, desc = "Debug: run to cursor" },
+			{ "<leader>dr", function() require("dap").repl.open() end, desc = "Debug: open REPL" },
+			{ "<leader>dl", function() require("dap").run_last() end, desc = "Debug: run last" },
+			{ "<leader>dt", function() require("dap").terminate() end, desc = "Debug: terminate" },
+		},
 		config = function()
 			local dap = require("dap")
-			local mason_data = vim.fn.stdpath("data") .. "\\mason\\packages"
+			local java_debug = mason_package_path("java-debug-adapter")
 
-			-- Java 调试适配器
 			dap.adapters.java = function(callback)
-				local jda_path = mason_data .. "\\java-debug-adapter\\extension\\server"
-				local jar_pattern = jda_path .. "\\com.microsoft.java.debug.plugin-*.jar"
-				local jar = vim.fn.glob(jar_pattern)
+				if not java_debug then
+					vim.notify("java-debug-adapter not found, run :Mason", vim.log.levels.ERROR)
+					return
+				end
+
+				local jar = vim.fn.glob(join_paths(java_debug, "extension", "server", "com.microsoft.java.debug.plugin-*.jar"))
 				if jar == "" then
 					vim.notify("java-debug-adapter jar not found, run :Mason", vim.log.levels.ERROR)
 					return
 				end
+
 				callback({
 					type = "executable",
 					command = "java",
@@ -23,40 +85,59 @@ return {
 				})
 			end
 
-			-- Java 测试用配置（占位）
 			dap.configurations.java = {
 				{
 					type = "java",
 					request = "launch",
-					name = "Launch Java Test (Current File)",
+					name = "Launch Java",
 				},
 			}
 		end,
 	},
 
-	-- 2. nvim-dap-ui：图形化调试界面（原配置保留）
 	{
-		"rcarriga/nvim-dap-ui",
-		lazy = true,
-		dependencies = {
-			"mfussenegger/nvim-dap",
-			"nvim-neotest/nvim-nio", -- 你的原依赖保留
-		},
+		"mfussenegger/nvim-dap-python",
+		ft = "python",
+		dependencies = { "mfussenegger/nvim-dap", "mason-org/mason.nvim" },
 		config = function()
-			require("dapui").setup()
+			require("dap-python").setup(debugpy_python())
 		end,
 	},
 
-	-- 3. nvim-dap-virtual-text：调试时变量值显示（原配置保留）
 	{
-		"theHamsta/nvim-dap-virtual-text",
-		lazy = true,
+		"rcarriga/nvim-dap-ui",
 		dependencies = {
 			"mfussenegger/nvim-dap",
-			"nvim-treesitter/nvim-treesitter", -- 原依赖保留
+			"nvim-neotest/nvim-nio",
+		},
+		keys = {
+			{ "<leader>du", function() require("dapui").toggle() end, desc = "Debug: toggle UI" },
+			{ "<leader>de", function() require("dapui").eval() end, desc = "Debug: eval expression", mode = { "n", "v" } },
 		},
 		config = function()
-			require("nvim-dap-virtual-text").setup() -- 注意可能需要 .setup()
+			local dap = require("dap")
+			local dapui = require("dapui")
+
+			dapui.setup()
+
+			dap.listeners.after.event_initialized["dapui_config"] = function()
+				dapui.open()
+			end
+			dap.listeners.before.event_terminated["dapui_config"] = function()
+				dapui.close()
+			end
+			dap.listeners.before.event_exited["dapui_config"] = function()
+				dapui.close()
+			end
 		end,
+	},
+
+	{
+		"theHamsta/nvim-dap-virtual-text",
+		dependencies = {
+			"mfussenegger/nvim-dap",
+			"nvim-treesitter/nvim-treesitter",
+		},
+		opts = {},
 	},
 }

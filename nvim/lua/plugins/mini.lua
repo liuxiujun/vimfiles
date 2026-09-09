@@ -4,7 +4,7 @@ return {
     config = function()
         -- 只有你显式 setup 的模块才会被启用
         require('mini.icons').setup()
-        require('mini.comment').setup()
+        -- 注释用 nvim 0.10+ 内置的 gc/gcc 操作符，不再需要 mini.comment
         -- require('mini.ai').setup()
     end
 }

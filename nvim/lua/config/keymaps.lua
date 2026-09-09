@@ -33,8 +33,8 @@ vim.keymap.set("n", "<leader>X", ":qa<CR>", { noremap = true, silent = true, des
 
 -- Buffer
 -- <C-^> (:b # 的快捷键)  快速切换至上次缓冲区
-vim.keymap.set('n', '<Tab>', ':bnext<CR>', { desc = "Next buffer" })
-vim.keymap.set('n', '<S-Tab>', ':bprevious<CR>', { desc = "Previous buffer" })
+-- 缓冲区切换使用 nvim 内置的 ]b / [b（0.11+ 自带），不再映射 <Tab>/<S-Tab>：
+-- <Tab> 与 <C-i> 在终端里同键码，映射 <Tab> 会导致 jumplist 前进跳转失效
 vim.keymap.set('n', '<leader>bd', function() require("mini.bufremove").delete(0, false) end, { desc = "Close buffer" })
 vim.keymap.set('n', '<leader>bD', function() require("mini.bufremove").delete(0, true) end, { desc = "Force close buffer" })
 vim.keymap.set('n', '<leader>bp', ':BufferLinePick<CR>', { desc = "Pick buffer" })
@@ -44,11 +44,10 @@ vim.keymap.set('n', '<leader>b0', ':bfirst<CR>', { desc = "First buffer" })
 vim.keymap.set('n', '<leader>b$', ':blast<CR>', { desc = "Last buffer" })
 
 -- For Overseer
-vim.keymap.set("n", "<leader>rr", "<cmd>OverseerRun<cr>", { desc = "Overseer Run Task" })
-vim.keymap.set("n", "<leader>rt", "<cmd>OverseerToggle<cr>", { desc = "Overseer Toggle" })
-vim.keymap.set("n", "<leader>rc", "<cmd>OverseerRunCmd<cr>", { desc = "Overseer Run Custom Cmd" })
-vim.keymap.set("n", "<leader>ra", "<cmd>OverseerRunAction<cr>", { desc = "Overseer Run Task Action" })
-vim.keymap.set("n", "<leader>rq", "<cmd>OverseerQuickAction<cr>", { desc = "Overseer Quick Action" })
+vim.keymap.set("n", "<leader>rr", "<cmd>OverseerRun<cr>", { desc = "Run a task from a template" })
+vim.keymap.set("n", "<leader>rt", "<cmd>OverseerToggle<cr>", { desc = "Toggle the overseer windows" })
+vim.keymap.set("n", "<leader>ra", "<cmd>OverseerShell<cr>", { desc = "Run a shell command as an overseer task" })
+vim.keymap.set("n", "<leader>rc", "<cmd>OverseerTaskAction<cr>", { desc = "Select a task to run an action on" })
 
 -- For nvim-surround
 --     Old text                    Command         New text
@@ -90,11 +89,7 @@ vim.keymap.set("n", "<leader>lM", "<cmd>Mason<CR>", { noremap = true, silent = t
 vim.keymap.set("v", "<", "<gv", opts)
 vim.keymap.set("v", ">", ">gv", opts)
 
--- For nvim-treesitter
--- 1. Press `gss` to intialize selection. (ss = start selection)
--- 2. Now we are in the visual mode.
--- 3. Press `gsi` to increment selection by AST node. (si = selection incremental)
--- 4. Press `gsc` to increment selection by scope. (sc = scope)
+-- treesitter 文本对象与函数跳转（am/im/ac/ic、]m/]M/[m/[M）见 plugins/treesitter.lua
 
 
 -------------------

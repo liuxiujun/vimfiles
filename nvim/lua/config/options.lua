@@ -16,7 +16,7 @@ vim.opt.fileformat = "unix" -- 新建文件默认保存为 Unix 格式（LF）
 vim.opt.fileformats = "unix,dos,mac" -- 打开文件时自动检测行尾，优先当作 Unix 格式处理
 
 -- Set Encoding
-vim.opt.encoding = "utf-8"
+-- nvim 内部编码固定为 utf-8，这里只配置打开文件时的编码探测顺序
 vim.opt.fileencodings = "utf-8,gbk,gb18030,latin1,ucs-bom"
 
 -- Set Filetype
@@ -27,12 +27,9 @@ vim.filetype.add({
 	},
 })
 
--- 设置代码折叠
-vim.opt.foldmethod = "indent"
--- vim.opt.foldlevel = 99
--- vim.opt.foldnestmax = 5
--- vim.opt.foldcolumn = "1"
--- vim.opt.foldenable = true
+-- 代码折叠不在这里全局设置：
+-- treesitter 在 FileType 时设置 foldmethod=expr（配合 nvim-ufo），
+-- 没有语法解析器的文件保持默认 manual，不做折叠
 
 -- Clipboard
 -- Hint: use `:h <option>` to figure out the meaning if needed

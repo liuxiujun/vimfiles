@@ -90,6 +90,13 @@ if is_windows then
             },
         },
         {
+            label = "zabbix MySQL(110)",
+            args = {
+                "mysqlsh",
+                "root@172.18.102.110:3306"
+            },
+        },
+        {
             label = "dev@debian-lxj-test",
             args = {
                 "ssh",
@@ -105,6 +112,69 @@ if is_windows then
                 "-i",
                 wezterm.home_dir .. "/.ssh/id_ed25519",
                 "lxj@172.31.0.150",
+            },
+        },
+        {
+            label = "Oracle 19c(150)",
+            args = {
+                "sql",
+                "sys/oracle@//172.31.0.150:1521/ORCLPDB1",
+                "as",
+                "sysdba"
+            },
+        },
+        {
+            label = "cns@172.31.0.151",
+            args = {
+                "ssh", 
+                "-i",
+                wezterm.home_dir .. "/.ssh/id_ed25519",
+                "cns@172.31.0.151",
+            },
+        },
+        {
+            label = "dev@172.31.0.151",
+            args = {
+                "ssh", 
+                "-i",
+                wezterm.home_dir .. "/.ssh/id_ed25519",
+                "dev@172.31.0.151",
+            },
+        },
+        {
+            label = "root@lwops",
+            args = {
+                "ssh", 
+                "-i",
+                wezterm.home_dir .. "/.ssh/id_ed25519",
+                "root@172.18.102.233",
+            },
+        },
+        {
+            label = "root@saier",
+            args = {
+                "ssh", 
+                "-i",
+                wezterm.home_dir .. "/.ssh/id_ed25519",
+                "root@172.18.102.133",
+            },
+        },
+        {
+            label = "root@192.168.100.101",
+            args = {
+                "ssh", 
+                "-i",
+                wezterm.home_dir .. "/.ssh/id_ed25519",
+                "root@192.168.100.101",
+            },
+        },
+        {
+            label = "root@192.168.100.102",
+            args = {
+                "ssh", 
+                "-i",
+                wezterm.home_dir .. "/.ssh/id_ed25519",
+                "root@192.168.100.102",
             },
         },
         {
